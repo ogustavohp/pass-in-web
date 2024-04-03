@@ -17,9 +17,13 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className={inter.className}>
-        <Header />
-        <main className="">{children}</main>
+      <body
+        className={`bg-zinc-950 text-zinc-50 antialiased ${inter.className}`}
+      >
+        <div className="max-w-[1216px] mx-auto py-5 flex flex-col gap-5">
+          <Header />
+          <main className="">{children}</main>
+        </div>
       </body>
     </html>
   )
