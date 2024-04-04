@@ -6,6 +6,9 @@ import {
   ChevronsRight,
   MoreHorizontal,
 } from 'lucide-react'
+import dayjs from 'dayjs'
+import 'dayjs/locale/pt-br'
+import relativeTime from 'dayjs/plugin/relativeTime'
 import { IconButton } from '@/components/icon-button'
 import { Table } from '@/components/table/table'
 import { TableHeader } from '@/components/table/table-header'
@@ -15,11 +18,30 @@ import { ChangeEvent, useState } from 'react'
 import { SearchInput } from './search-input'
 import { attendeesStatic } from '@/data/attendees'
 
+dayjs.extend(relativeTime)
+dayjs.locale('pt-br')
+
 export function AttendeeList() {
   const [search, setSearch] = useState('')
+  const [page, setPage] = useState(1)
+
+  const totalPages = Math.ceil(attendeesStatic.length / 10)
 
   function handleInputSearch(e: ChangeEvent<HTMLInputElement>) {
     setSearch(e.target.value)
+  }
+
+  function goToFirstPage() {
+    setPage(1)
+  }
+  function goToNextPage() {
+    setPage((previousPage) => previousPage + 1)
+  }
+  function goToPreviousPage() {
+    setPage((previousPage) => previousPage - 1)
+  }
+  function goToLastPage() {
+    setPage(totalPages)
   }
 
   return (
@@ -46,55 +68,64 @@ export function AttendeeList() {
           </tr>
         </thead>
         <tbody>
-          {attendeesStatic.map((attendee, i) => {
-            return (
-              <TableRow key={attendee.id + '-' + i}>
-                <TableCell>
-                  <input
-                    type="checkbox"
-                    className="size-4 bg-black/20 rounded border border-white/10 "
-                  />
-                </TableCell>
-                <TableCell>{attendee.id}</TableCell>
-                <TableCell>
-                  <div className="flex flex-col gap-1">
-                    <span className="font-semibold text-zinc-50">
-                      {attendee.name}
-                    </span>
-                    <span>{attendee.email}</span>
-                  </div>
-                </TableCell>
-                <TableCell>
-                  {attendee.createdAt}
-                  dias atrás
-                </TableCell>
-                <TableCell>{attendee.checkedInAt}3 dias atrás</TableCell>
-                <TableCell>
-                  <IconButton transparent>
-                    <MoreHorizontal className="size-4" />
-                  </IconButton>
-                </TableCell>
-              </TableRow>
-            )
-          })}
+          {attendeesStatic
+            .slice((page - 1) * 10, page * 10)
+            .map((attendee, i) => {
+              return (
+                <TableRow key={attendee.id + '-' + i}>
+                  <TableCell>
+                    <input
+                      type="checkbox"
+                      className="size-4 bg-black/20 rounded border border-white/10 "
+                    />
+                  </TableCell>
+                  <TableCell>{attendee.id}</TableCell>
+                  <TableCell>
+                    <div className="flex flex-col gap-1">
+                      <span className="font-semibold text-zinc-50">
+                        {attendee.name}
+                      </span>
+                      <span>{attendee.email}</span>
+                    </div>
+                  </TableCell>
+                  <TableCell>{dayjs().to(attendee.createdAt)}</TableCell>
+                  <TableCell>{dayjs().to(attendee.checkedInAt)}</TableCell>
+                  <TableCell>
+                    <IconButton transparent>
+                      <MoreHorizontal className="size-4" />
+                    </IconButton>
+                  </TableCell>
+                </TableRow>
+              )
+            })}
         </tbody>
         <tfoot>
           <tr>
-            <TableCell colSpan={3}>Mostrando 10 de 228 itens</TableCell>
+            <TableCell colSpan={3}>
+              Mostrando 10 de {attendeesStatic.length} itens
+            </TableCell>
             <TableCell colSpan={3}>
               <div className="flex items-center gap-8 justify-end">
-                <span>Pagina 1 de 42</span>
+                <span>
+                  Pagina {page} de {totalPages}
+                </span>
                 <div className="flex gap-1.5">
-                  <IconButton>
+                  <IconButton onClick={goToFirstPage} disabled={page === 1}>
                     <ChevronsLeft className="size-4" />
                   </IconButton>
-                  <IconButton>
+                  <IconButton onClick={goToPreviousPage} disabled={page === 1}>
                     <ChevronLeft className="size-4" />
                   </IconButton>
-                  <IconButton>
+                  <IconButton
+                    onClick={goToNextPage}
+                    disabled={page === totalPages}
+                  >
                     <ChevronRight className="size-4" />
                   </IconButton>
-                  <IconButton>
+                  <IconButton
+                    onClick={goToLastPage}
+                    disabled={page === totalPages}
+                  >
                     <ChevronsRight className="size-4" />
                   </IconButton>
                 </div>
