@@ -14,9 +14,9 @@ import { Table } from '@/components/table/table'
 import { TableHeader } from '@/components/table/table-header'
 import { TableCell } from '@/components/table/table-cell'
 import { TableRow } from '@/components/table/table-row'
-import { ChangeEvent, useState } from 'react'
+import { ChangeEvent, useEffect, useState } from 'react'
 import { SearchInput } from './search-input'
-import { attendeesStatic } from '@/data/attendees'
+import { attendees } from '@/data/attendees'
 
 dayjs.extend(relativeTime)
 dayjs.locale('pt-br')
@@ -24,8 +24,22 @@ dayjs.locale('pt-br')
 export function AttendeeList() {
   const [search, setSearch] = useState('')
   const [page, setPage] = useState(1)
+  const [att, setAtt] = useState<
+    | {
+        id: number
+        name: string
+        email: string
+        createdAt: Date
+        checkedInAt: Date
+      }[]
+    | null
+  >(null)
 
-  const totalPages = Math.ceil(attendeesStatic.length / 10)
+  useEffect(() => {
+    setAtt(attendees)
+  }, [])
+
+  const totalPages = Math.ceil(attendees.length / 10)
 
   function handleInputSearch(e: ChangeEvent<HTMLInputElement>) {
     setSearch(e.target.value)
@@ -68,9 +82,8 @@ export function AttendeeList() {
           </tr>
         </thead>
         <tbody>
-          {attendeesStatic
-            .slice((page - 1) * 10, page * 10)
-            .map((attendee, i) => {
+          {att &&
+            att.slice((page - 1) * 10, page * 10).map((attendee, i) => {
               return (
                 <TableRow key={attendee.id + '-' + i}>
                   <TableCell>
@@ -102,7 +115,7 @@ export function AttendeeList() {
         <tfoot>
           <tr>
             <TableCell colSpan={3}>
-              Mostrando 10 de {attendeesStatic.length} itens
+              Mostrando 10 de {attendees.length} itens
             </TableCell>
             <TableCell colSpan={3}>
               <div className="flex items-center gap-8 justify-end">
