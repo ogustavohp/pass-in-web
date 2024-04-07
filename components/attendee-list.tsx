@@ -16,46 +16,85 @@ import { TableCell } from '@/components/table/table-cell'
 import { TableRow } from '@/components/table/table-row'
 import { ChangeEvent, useEffect, useState } from 'react'
 import { SearchInput } from './search-input'
-import { attendees } from '@/data/attendees'
+import { useSearchParams } from 'next/navigation'
 
 dayjs.extend(relativeTime)
 dayjs.locale('pt-br')
 
+interface Attendees {
+  id: string
+  name: string
+  email: string
+  createdAt: string
+  checkedInAt: string | null
+}
+
 export function AttendeeList() {
-  const [search, setSearch] = useState('')
-  const [page, setPage] = useState(1)
-  const [att, setAtt] = useState<
-    | {
-        id: number
-        name: string
-        email: string
-        createdAt: Date
-        checkedInAt: Date
-      }[]
-    | null
-  >(null)
+  const searchParams = useSearchParams()
+  const [search, setSearch] = useState(() => {
+    if (searchParams.has('query')) {
+      return searchParams.get('query') ?? ''
+    }
+    return ''
+  })
+  const [page, setPage] = useState(() => {
+    if (searchParams.has('page')) {
+      return Number(searchParams.get('page'))
+    }
+    return 1
+  })
+  const [attendees, setAttendees] = useState<Attendees[]>([])
+  const [totalAttendees, setTotalAttendees] = useState(0)
 
   useEffect(() => {
-    setAtt(attendees)
-  }, [])
+    const url = new URL(
+      'http://localhost:3333/events/9e9bd979-9d10-4915-b339-3786b1634f33/attendees',
+    )
+    url.searchParams.set('pageIndex', String(page - 1))
+    if (search.length > 0) {
+      url.searchParams.set('query', search)
+    }
 
-  const totalPages = Math.ceil(attendees.length / 10)
+    fetch(url)
+      .then((res) => res.json())
+      .then((data) => {
+        setAttendees(data.attendees)
+        setTotalAttendees(data.totalAttendees)
+      })
+  }, [page, search])
+
+  const totalPages = Math.ceil(totalAttendees / 10)
+
+  function setCurrentSearch(search: string) {
+    const url = new URL(window.location.toString())
+    url.searchParams.set('query', search)
+    window.history.pushState({}, '', url)
+    setSearch(search)
+  }
+
+  function setCurrentPage(page: number) {
+    const url = new URL(window.location.toString())
+    url.searchParams.set('page', String(page))
+    window.history.pushState({}, '', url)
+    setPage(page)
+  }
 
   function handleInputSearch(e: ChangeEvent<HTMLInputElement>) {
-    setSearch(e.target.value)
+    setCurrentSearch(e.target.value)
+    setPage(1)
   }
 
   function goToFirstPage() {
-    setPage(1)
+    setCurrentPage(1)
   }
   function goToNextPage() {
-    setPage((previousPage) => previousPage + 1)
+    setCurrentPage(page + 1)
   }
   function goToPreviousPage() {
-    setPage((previousPage) => previousPage - 1)
+    setCurrentPage(page - 1)
   }
   function goToLastPage() {
-    setPage(totalPages)
+    setCurrentPage(totalPages)
   }
 
   return (
@@ -82,8 +121,8 @@ export function AttendeeList() {
           </tr>
         </thead>
         <tbody>
-          {att &&
-            att.slice((page - 1) * 10, page * 10).map((attendee, i) => {
+          {attendees &&
+            attendees.map((attendee, i) => {
               return (
                 <TableRow key={attendee.id + '-' + i}>
                   <TableCell>
@@ -102,7 +141,13 @@ export function AttendeeList() {
                     </div>
                   </TableCell>
                   <TableCell>{dayjs().to(attendee.createdAt)}</TableCell>
-                  <TableCell>{dayjs().to(attendee.checkedInAt)}</TableCell>
+                  <TableCell>
+                    {attendee.checkedInAt === null ? (
+                      <span className="text-zinc-400">Não fez check-in</span>
+                    ) : (
+                      dayjs().to(attendee.checkedInAt)
+                    )}
+                  </TableCell>
                   <TableCell>
                     <IconButton transparent>
                       <MoreHorizontal className="size-4" />
@@ -115,7 +160,7 @@ export function AttendeeList() {
         <tfoot>
           <tr>
             <TableCell colSpan={3}>
-              Mostrando 10 de {attendees.length} itens
+              Mostrando {attendees.length} de {totalAttendees} itens
             </TableCell>
             <TableCell colSpan={3}>
               <div className="flex items-center gap-8 justify-end">
