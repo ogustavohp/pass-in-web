@@ -12,7 +12,7 @@ export function SearchInput({ className, ...props }: SearchInputProps) {
         type="text"
         placeholder="Buscar participantes..."
         className={twMerge(
-          'bg-transparent outline-none flex-1 p-0 border-0 text-sm',
+          'bg-transparent outline-none flex-1 p-0 border-0 text-sm focus:ring-0',
           className,
         )}
         {...props}
